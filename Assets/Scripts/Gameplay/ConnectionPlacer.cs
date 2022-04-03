@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ConnectionPlacer : MonoBehaviour
 {
@@ -12,42 +13,61 @@ public class ConnectionPlacer : MonoBehaviour
 
     public bool placingConnection;
 
-    ConnectionPoint cp;
+    public ConnectionPoint cp;
 
     public bool selectedCp;
 
     public LayerMask bucketLayerMask, connectionPointLayerMask;
 
+    public float refillTime;
+    float lastRefill;
+
+    public TMPro.TextMeshProUGUI connectionNumberIndicator;
+    public Image fillImage;
+
     void Update()
     {
+        //refill
+        connectionNumberIndicator.text = connectionsAvailable.ToString();
+        float progress = (Time.time - lastRefill) / refillTime;
+        fillImage.fillAmount = progress;
+        if (progress >= 1)
+        {
+            lastRefill = Time.time;
+            connectionsAvailable++;
+        }
+
+        //place connection
         if (placingConnection && Input.GetMouseButtonDown(0))
         {
-            RaycastHit2D hit;
             if (selectedCp)
             {
-                hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector3.zero, bucketLayerMask);
-                if (hit.collider != null)
+                RaycastHit2D[] hits = Physics2D.RaycastAll(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector3.zero, bucketLayerMask);
+                foreach (RaycastHit2D hit in hits)
                 {
-                    Bucket hitBucket = hit.transform.gameObject.GetComponent<Bucket>();
-                    if (cp.ValidateConnection(hitBucket.GetConnectPosition()))
-                        PlaceConnection(cp, hitBucket);
-                    else
-                        Debug.Log("Invalid Bucket");
+                    if (hit.collider.CompareTag("Bucket"))
+                    {
+                        Bucket hitBucket = hit.collider.gameObject.GetComponent<Bucket>();
+                        if (cp.ValidateConnection(hitBucket.GetConnectPosition()))
+                            PlaceConnection(cp, hitBucket);
+                        else
+                            Debug.Log("Invalid Bucket");
+                    }
                 }
-                else
-                    Debug.Log("Not a bucket");
             }
             else
             {
-                hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector3.zero, connectionPointLayerMask);
-                if (hit.collider != null)
+                RaycastHit2D[] hits = Physics2D.RaycastAll(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector3.zero, connectionPointLayerMask);
+                foreach (RaycastHit2D hit in hits)
                 {
-                    cp = hit.transform.gameObject.GetComponent<ConnectionPoint>();
-                    selectedCp = true;
-                    ShowConnections(false);
+                    if (hit.collider.CompareTag("ConnectionPoint"))
+                    {
+                        cp = hit.collider.gameObject.GetComponent<ConnectionPoint>();
+                        selectedCp = true;
+                        ShowConnections(false);
+                        break;
+                    }
                 }
-                else
-                    Debug.Log("Not a connection point");
             }
         }
     }
@@ -88,12 +108,9 @@ public class ConnectionPlacer : MonoBehaviour
 
     public void ShowConnections(bool show)
     {
-        Vector3 newScale = Vector3.zero;
-        if (show)
-            newScale = new Vector3(0.3f, 0.3f, 1);
         foreach (var cp in connectionsPoints)
-        { 
-            cp.transform.localScale = newScale;
+        {
+            cp.Show(show);
         }
     }
 

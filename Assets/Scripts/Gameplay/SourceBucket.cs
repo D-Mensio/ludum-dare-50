@@ -13,6 +13,16 @@ public class SourceBucket : MonoBehaviour
     public float accellerationTime;
     private float timePassedFromStart;
 
+    private bool alertActive;
+
+    public ParticleSystem alert;
+
+    private void Awake()
+    {
+        alert.Stop();
+        timePassedFromStart = 0f;
+    }
+
     void Update()
     {
         timePassedFromStart += Time.deltaTime;
@@ -28,6 +38,18 @@ public class SourceBucket : MonoBehaviour
 
         float rejected = bucket.ReceiveWater(amountPerSecond * Time.deltaTime);
         if (rejected > 0)
-            Debug.Log("Lost");
+        {
+            GameOverManager.Instance.GameOver(transform.position);
+        }
+        if (!alertActive && bucket.waterLevel > 0.7f)
+        {
+            alertActive = true;
+            alert.Play();
+        }
+        else if (alertActive && bucket.waterLevel < 0.6f)
+        {
+            alertActive = false;
+            alert.Stop();
+        }
     }
 }

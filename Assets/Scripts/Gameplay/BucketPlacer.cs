@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class BucketPlacer : MonoBehaviour
 {
@@ -18,13 +19,30 @@ public class BucketPlacer : MonoBehaviour
 
     public bool placingBucket;
 
+    public float refillTime;
+    float lastRefill;
+
+    public TMPro.TextMeshProUGUI bucketNumberIndicator;
+    public Image fillImage;
+
     void Update()
     {
+        //refill
+        bucketNumberIndicator.text = bucketsAvailable.ToString();
+        float progress = (Time.time - lastRefill) / refillTime;
+        fillImage.fillAmount = progress;
+        if (progress >= 1)
+        {
+            lastRefill = Time.time;
+            bucketsAvailable++;
+        }
+
+        //place bucket
         if (placingBucket)
         {
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            mousePos = new Vector3(mousePos.x, mousePos.y, 0);
-            posIndicator.transform.localPosition = mousePos - new Vector3(0, 0, 5);
+            mousePos = new Vector3(mousePos.x, mousePos.y, -5);
+            posIndicator.transform.localPosition = mousePos;
             if (Physics2D.OverlapBox(mousePos, new Vector2(1, 1), 0, bucketLayerMask))
             {
                 placeable = false;
@@ -68,6 +86,9 @@ public class BucketPlacer : MonoBehaviour
             if (bucketsAvailable > 0)
             {
                 placingBucket = true;
+                Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                mousePos = new Vector3(mousePos.x, mousePos.y, -5);
+                posIndicator.transform.localPosition = mousePos;
                 posIndicator.transform.localScale = Vector3.one;
             }
             else

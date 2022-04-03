@@ -16,6 +16,8 @@ public class ConnectionPoint : MonoBehaviour
 
     public float capacity;
 
+    public SpriteRenderer sr;
+
     private void Update()
     {
         
@@ -49,6 +51,23 @@ public class ConnectionPoint : MonoBehaviour
     public bool IsOpen()
     {
         return connected && capacity > 0;
+    }
+
+    public void Show(bool show)
+    {
+        if (show)
+        {
+            Color c = sr.color;
+            c.a = 1;
+            sr.color = c;
+        }
+        else
+        {
+            Color c = sr.color;
+            c.a = 0;
+            sr.color = c;
+        }
+
     }
 
 }

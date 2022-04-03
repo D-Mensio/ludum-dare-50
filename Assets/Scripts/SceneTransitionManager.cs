@@ -3,14 +3,31 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class SceneTransitionManager : Singleton
+public class SceneTransitionManager : MonoBehaviour
 {
     [SerializeField]
     Animator transitionAnimator;
 
     public bool loadingScene = false;
-    private bool transitionPlaying = false;
 
+    public static SceneTransitionManager Instance { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            Instance = this;
+        }    
+    }
+
+    private void Start()
+    {
+        LoadScene("MainMenu");
+    }
 
     public void LoadScene(string s)
     {
@@ -25,18 +42,24 @@ public class SceneTransitionManager : Singleton
         loadingScene = true;
         transitionAnimator.SetBool("Transition", true);
         AsyncOperation loadSceneAsync = SceneManager.LoadSceneAsync(s);
+        loadSceneAsync.allowSceneActivation = false;
         yield return TimeTransition();
-        while (!(loadSceneAsync.isDone && !transitionPlaying))
+        while (!(loadSceneAsync.isDone))
         {
+            if (loadSceneAsync.progress >= 0.9f)
+                loadSceneAsync.allowSceneActivation = true;
             yield return null;
         }
         transitionAnimator.SetBool("Transition", false);
         yield return TimeTransition();
+        Time.timeScale = 1;
         loadingScene = false;
     }
 
     private IEnumerator TimeTransition()
     {
-        yield return new WaitForSeconds(0.34f);
+        yield return new WaitForSecondsRealtime(0.5f);
     }
+
+
 }
