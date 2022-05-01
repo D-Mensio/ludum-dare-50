@@ -1,16 +1,12 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class MainMenuManager : MonoBehaviour
 {
-    public Image cupFill;
-
+    [SerializeField]
+    private Image cupFill;
     private float progress = 0.5f;
-
     private float changeDelay;
-
     private bool rising = true;
 
     public void Play()

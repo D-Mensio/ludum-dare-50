@@ -1,17 +1,36 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class InputManager : MonoBehaviour
 {
-    public ConnectionPlacer cp;
-    public BucketPlacer bp;
-
+    [Header("Parameters")]
     private bool paused = false;
     private bool doubleSpeed = false;
-
-    public bool gameOver;
-
+    private bool gameOver;
+    [SerializeField]
+    private LayerMask bucketLayerMask;
+    private bool holding;
+    [SerializeField]
+    private float swipeDetectTime;
+    private float currentDetectTime;
+    private Vector2 originalPos;
+    [SerializeField] 
+    private float swipeThreshold;
+   
+    [Header("Object Connections")]
+    [SerializeField]
+    private ConnectionManager cm;
+    [SerializeField]
+    private BucketManager bm;
+    [SerializeField]
+    private CameraController cc;
+    [SerializeField]
+    private Toggle pauseButton;
+    [SerializeField]
+    private Toggle playButton;
+    [SerializeField]
+    private Toggle doubleSpeedButton;
     public void Update()
     {
         if (!gameOver)
@@ -20,39 +39,60 @@ public class InputManager : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 if (paused)
-                    Play();
+                    TogglePlay();
                 else
-                    Pause();
+                    TogglePause();
             }
 
+            ProcessInputs();
+        }
+    }
 
-            //Cancel bucket placement
-            if (bp.placingBucket && Input.GetMouseButtonDown(1))
+    private void ProcessInputs()
+    {
+        if (Input.GetMouseButtonDown(0) && !PointerOverUI())
+        {
+            if (!holding)
             {
-                bp.StopPlacingBucket();
-            }
-            //Cancel connection placement
-            else if (cp.placingConnection && Input.GetMouseButtonDown(1))
-            {
-                cp.StopPlacingConnection();
-            }
-            //Start bucket placement
-            if (Input.GetKeyDown(KeyCode.Alpha1))
-            {
-                if (cp.placingConnection)
-                    cp.StopPlacingConnection();
-                if (!bp.placingBucket)
-                    bp.StartPlacingBucket();
-            }
-            //Start connection placement
-            else if (Input.GetKeyDown(KeyCode.Alpha2))
-            {
-                if (bp.placingBucket)
-                    bp.StopPlacingBucket();
-                if (!cp.placingConnection)
-                    cp.StartPlacingConnection();
+                holding = true;
+                currentDetectTime = swipeDetectTime;
+                originalPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             }
         }
+        else if (holding && Input.GetMouseButton(0))
+        {
+            currentDetectTime -= Time.unscaledDeltaTime;
+
+            Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            Collider2D hitCollider = Physics2D.OverlapPoint(originalPos, bucketLayerMask);
+
+            if (hitCollider)
+            {
+                Bucket hitBucket = hitCollider.gameObject.GetComponent<Bucket>();
+                if (hitBucket.TryGetClosestConnectionPoint(out ConnectionPoint startingPoint, mousePos))
+                {
+                    holding = false;
+                    cm.StartPlacingConnection(startingPoint);
+                }
+            }
+            else if ((mousePos - originalPos).magnitude > swipeThreshold)
+            {
+                holding = false;
+                cc.moving = true;
+            }
+            else if (currentDetectTime <= 0)
+            {
+                holding = false;
+                bm.StartPlacingBucket();
+            }
+        }
+        else if (holding && Input.GetMouseButtonUp(0))
+        {
+            holding = false;
+            bm.StartPlacingBucket();
+        }
+
     }
 
     public void Pause()
@@ -64,12 +104,18 @@ public class InputManager : MonoBehaviour
         }
     }
 
+    public void TogglePause()
+    {
+        pauseButton.isOn = true;
+    }
+
     public void SetNormalSpeed()
     {
         if (!gameOver)
         {
             doubleSpeed = false;
-            Play();
+            paused = false;
+            Time.timeScale = 1f;
         }
     }
 
@@ -78,27 +124,44 @@ public class InputManager : MonoBehaviour
         if (!gameOver)
         {
             doubleSpeed = true;
-            Play();
+            paused = false;
+            Time.timeScale = 2f;
         }
     }
 
-    public void Play()
+    public void TogglePlay()
     {
-        if (!gameOver)
+        if (doubleSpeed)
         {
-            paused = false;
-            if (doubleSpeed)
-                Time.timeScale = 2f;
-            else
-                Time.timeScale = 1f;
+            doubleSpeedButton.isOn = true;
+        }
+        else
+        {
+            playButton.isOn = true;
         }
     }
 
     public void GameOver()
     {
         gameOver = true;
-        bp.StopPlacingBucket();
-        cp.StopPlacingConnection();
+        bm.StopPlacingBucket();
+        cm.StopPlacingConnection();
     }
+
+    private bool PointerOverUI()
+    {
+            //check mouse
+            if (EventSystem.current.IsPointerOverGameObject())
+                return true;
+
+            //check touch
+            if (Input.touchCount > 0 && Input.touches[0].phase == TouchPhase.Began)
+            {
+                if (EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
+                    return true;
+            }
+
+            return false;
+        }
 
 }

@@ -1,38 +1,42 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class TutorialManager : MonoBehaviour
 {
-    public GameObject tut1;
+    [SerializeField]
+    private int totalAnimationStates;
+    private int currentAnimState;
 
-    public GameObject tut2;
-
-    public Button leftArrow;
-
-    public Button rightArrow;
-
+    [SerializeField]
+    private Button leftArrow;
+    [SerializeField]
+    private Button rightArrow;
+    [SerializeField]
+    private Animator tutAnim;
 
     public void BackMainMenu()
     {
         SceneTransitionManager.Instance.LoadScene("MainMenu");
     }
 
-    public void Show1()
+    public void Forward()
     {
-        leftArrow.interactable = false;
-        rightArrow.interactable = true;
-        tut1.transform.localScale = Vector3.one;
-        tut2.transform.localScale = Vector3.zero;
+        if (currentAnimState == 0)
+            leftArrow.interactable = true;
+        if (currentAnimState == totalAnimationStates - 2)
+            rightArrow.interactable = false;
+        currentAnimState++;
+        tutAnim.SetTrigger("Forward");
     }
 
-    public void Show2()
+    public void Backwards()
     {
-        leftArrow.interactable = true;
-        rightArrow.interactable = false;
-        tut2.transform.localScale = Vector3.one;
-        tut1.transform.localScale = Vector3.zero;
+        if (currentAnimState == totalAnimationStates - 1)
+            rightArrow.interactable = true;
+        if (currentAnimState == 1)
+            leftArrow.interactable = false;
+        currentAnimState--;
+        tutAnim.SetTrigger("Backwards");
     }
 
 }

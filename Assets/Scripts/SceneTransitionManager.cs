@@ -1,14 +1,13 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class SceneTransitionManager : MonoBehaviour
 {
     [SerializeField]
-    Animator transitionAnimator;
+    private Animator transitionAnimator;
 
-    public bool loadingScene = false;
+    private bool loadingScene = false;
 
     public static SceneTransitionManager Instance { get; private set; }
 

@@ -1,16 +1,19 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class GameOverManager : MonoBehaviour
 {
-    public bool gameOver;
+    private bool gameOver;
 
-    public InputManager im;
-
-    public CameraController cc;
-
-    public GameObject gameOverScreen;
+    [SerializeField]
+    private InputManager im;
+    [SerializeField]
+    private CameraController cc;
+    [SerializeField]
+    private Animator gameOverAC;
+    [SerializeField]
+    private Animator bottomUIAC;
+    [SerializeField]
+    private GameObject confirmPanel;
 
     public static GameOverManager Instance { get; private set; }
 
@@ -34,7 +37,9 @@ public class GameOverManager : MonoBehaviour
             im.GameOver();
             Time.timeScale = 0;
             cc.Converge(pos);
-            gameOverScreen.SetActive(true);
+            gameOverAC.SetTrigger("GameOver");
+            bottomUIAC.SetTrigger("GameOver");
+            HideConfirmPanel();
         }
     }
 
@@ -45,5 +50,18 @@ public class GameOverManager : MonoBehaviour
     public void MainMenu()
     {
         SceneTransitionManager.Instance.LoadScene("MainMenu");
+    }
+
+    public void ShowConfirmPanel()
+    {
+        if (!gameOver)
+        {
+            confirmPanel.transform.localScale = Vector3.one;
+        }
+    }
+
+    public void HideConfirmPanel()
+    {
+        confirmPanel.transform.localScale = Vector3.zero;
     }
 }
